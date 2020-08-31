@@ -1,0 +1,17 @@
+.app-header {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: center;
+  background:#253239;
+  padding: 10px;
+} 
+
+.search-container {
+  width: 300px;
+  margin: 5px 0;
+}
+
+.login-button-icon {
+  margin-right: 10px;
+}
