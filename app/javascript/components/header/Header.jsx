@@ -58,13 +58,15 @@ class Header extends Component {
       loginEmailInvalidError: false,
       loginPassword: "",
       loginPasswordRequiredError: false,
-      signupName: "",
-      signupNameRequiredError: false,
-      signupEmail: "",
-      signupEmailRequiredError: false,
-      signupEmailInvalidError: false,
-      signupPassword: "",
-      signupPasswordRequiredError: false
+      signupUser: {
+        name: "",
+        nameRequiredError: false,
+        email: "",
+        emailRequiredError: false,
+        emailInvalidError: false,
+        password: "",
+        passwordRequiredError: false
+      },
     }
   }
 
@@ -77,13 +79,15 @@ class Header extends Component {
       loginEmailInvalidError: false,
       loginPassword: "",
       loginPasswordRequiredError: false,
-      signupName: "",
-      signupNameRequiredError: false,
-      signupEmail: "",
-      signupEmailRequiredError: false,
-      signupEmailInvalidError: false,
-      signupPassword: "",
-      signupPasswordRequiredError: false
+      signupUser: {
+        name: "",
+        nameRequiredError: false,
+        email: "",
+        emailRequiredError: false,
+        emailInvalidError: false,
+        password: "",
+        passwordRequiredError: false
+      },
      })
   }
 
@@ -103,16 +107,31 @@ class Header extends Component {
     this.setState({ loginPassword: event.target.value });
   }
 
-  signupNameInputHandler = (event) => {
-    this.setState({ signupName: event.target.value });
+  signupNameInputHandler = ({ target: { value } }) => {
+    this.setState(oldState => ({
+      signupUser: {
+        ...oldState.signupUser,
+        name: value
+      }
+    }));
   }
   
-  signupEmailInputHandler = (event) => {
-    this.setState({ signupEmail: event.target.value });
+  signupEmailInputHandler = ({ target: { value } }) => {
+    this.setState(oldState => ({
+      signupUser: {
+        ...oldState.signupUser,
+        email: value
+      }
+    }));
   }
   
-  signupPasswordInputHandler = (event) => {
-    this.setState({ signupPassword: event.target.value });
+  signupPasswordInputHandler = ({ target: { value } }) => {
+    this.setState(oldState => ({
+      signupUser: {
+        ...oldState.signupUser,
+        password: value
+      }
+    }));
   }
 
   validateSignupForm = () => {
@@ -121,32 +140,70 @@ class Header extends Component {
     let isEmailInvalid = false;
     let isPasswordMissing = false;
 
-    if (this.state.signupName === "") {
+    const { signupUser } = this.state;
+
+    if (signupUser.name === "") {
       isNameMissing = true;
     }
 
-    if (this.state.signupEmail === "") {
+    if (signupUser.email === "") {
       isEmailMissing = true;
-    } else if (!(EMAIL_REGEX.test(this.state.signupEmail))) {
+    } else if (!(EMAIL_REGEX.test(signupUser.email))) {
       isEmailInvalid = true;
     }
     
-    if (this.state.signupPassword === "") {
+    if (signupUser.password === "") {
       isPasswordMissing = true;
     } 
 
-    this.setState({
-        signupNameRequiredError: isNameMissing,
-        signupEmailRequiredError: isEmailMissing,
-        signupEmailInvalidError: isEmailInvalid,
-        signupPasswordRequiredError: isPasswordMissing
-    })
+    this.setState(oldState => ({
+      signupUser: {
+        ...oldState.signupUser,
+        emailRequiredError: isEmailMissing,
+        emailInvalidError: isEmailInvalid,
+        passwordRequiredError: isPasswordMissing
+      }
+    }))
 
     return (!isNameMissing && !isEmailMissing && !isEmailInvalid && !isPasswordMissing);
   }
 
   signupSubmitClickHandler = () => {
     if (!(this.validateSignupForm())) return;
+
+    const url = this.props.baseUrl + "/users";
+    const requestBody = JSON.stringify({user: this.state.signupUser});
+
+    fetch(url, { 
+      method: 'POST',
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": document.querySelector('[name="csrf-token"]').content,
+      },
+      body: requestBody
+    })
+    .then(async response => {
+      if (response.ok) {
+        alert("User successfully registered");
+        this.setState({
+          modalTabValue: 0,
+          signupUser: {
+            name: "",
+            nameRequiredError: false,
+            email: "",
+            emailRequiredError: false,
+            emailInvalidError: false,
+            password: "",
+            passwordRequiredError: false
+          }
+        })
+      } else {
+        const responseBody = await response.json();
+        alert(responseBody.error_message);
+      }
+    })
+    .catch(err => console.log({err}));
   }
 
   validateLoginForm = () => {
@@ -175,6 +232,32 @@ class Header extends Component {
 
   loginSubmitClickHandler = () => {
     if (!(this.validateLoginForm())) return;
+
+    const url = this.props.baseUrl + "users";
+    const requestBody = JSON.stringify({ 
+      "email": this.state.loginEmail,
+      "password": this.state.loginPassword
+    });
+
+    fetch(url, { 
+      method: 'POST',
+      body: requestBody
+    })
+    .then(async response => {
+      console.log({response});
+      if (response.ok) {
+        const responseBody = await response.json();
+        console.log({responseBody});
+      } else if (response.status === 400) {
+        const json = JSON.parse(response.body);
+        if (json.code === 'SGR-001') {
+          this.setState({
+            signupContactNumberRegisteredError: true
+          })
+        }
+      }
+    })
+    .catch(err => console.log({err}));
   }
 
   render() {
@@ -219,6 +302,7 @@ class Header extends Component {
           </Button>
         </Fragment>
     } else {
+      const { signupUser } = this.state;
       modalContent = 
         <Fragment>
           <br />
@@ -227,9 +311,9 @@ class Header extends Component {
             <Input
               className="input-fields"
               type="text"
-              value={this.state.signupName}
+              value={signupUser.name}
               onChange={this.signupNameInputHandler} />
-            <FormHelperText className={this.state.signupNameRequiredError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={signupUser.nameRequiredError ? "dispBlock" : "dispNone"}>
               <span className="red">required</span>
             </FormHelperText>
           </FormControl>
@@ -239,12 +323,12 @@ class Header extends Component {
             <Input 
               className="input-fields"
               type="email"
-              value={this.state.signupEmail}
+              value={signupUser.email}
               onChange={this.signupEmailInputHandler} />
-            <FormHelperText className={this.state.signupEmailRequiredError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={signupUser.emailRequiredError ? "dispBlock" : "dispNone"}>
               <span className="red">required</span>
             </FormHelperText>
-            <FormHelperText className={this.state.signupEmailInvalidError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={signupUser.emailInvalidError ? "dispBlock" : "dispNone"}>
               <span className="red">Invalid Email</span>
             </FormHelperText>
           </FormControl>
@@ -254,9 +338,9 @@ class Header extends Component {
             <Input
               className="input-fields"
               type="password"
-              value={this.state.signupPassword}
+              value={signupUser.password}
               onChange={this.signupPasswordInputHandler} />
-            <FormHelperText className={this.state.signupPasswordRequiredError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={signupUser.passwordRequiredError ? "dispBlock" : "dispNone"}>
                 <span className="red">required</span>
             </FormHelperText>
           </FormControl>

@@ -7,7 +7,7 @@ class Home extends Component {
   render() {
     return (
       <Fragment>
-        <Header />
+        <Header baseUrl="http://localhost:3000"/>
       </Fragment>
     )
   }
