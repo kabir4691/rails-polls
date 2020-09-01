@@ -10,4 +10,5 @@ class User < ApplicationRecord
             format: { with: EMAIL_REGEX }
   validates :password, presence: true
 
+  has_secure_password
 end
