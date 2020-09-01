@@ -14,6 +14,7 @@ import { PollSharp } from '@material-ui/icons'
 import { Search } from '@material-ui/icons'
 import { AccountCircle } from '@material-ui/icons'
 import './Header.css'
+import API from '../../utils/API';
 
 const classes = theme => ({
   searchBarInput: {
@@ -30,7 +31,12 @@ const classes = theme => ({
     '&:after': {
       borderBottom: '1px solid white',
     }
-  }
+  },
+  profileButton: {
+    color:"#c2c2c2",
+    "text-transform":"none",
+    fontSize: '17px'
+  }   
 }) 
 
 const modalStyle = {
@@ -53,11 +59,13 @@ class Header extends Component {
     this.state = {
       isModalOpen: false,
       modalTabValue: 0,
-      loginEmail: "",
-      loginEmailRequiredError: false,
-      loginEmailInvalidError: false,
-      loginPassword: "",
-      loginPasswordRequiredError: false,
+      loginUser: {
+        email: "",
+        emailRequiredError: false,
+        emailInvalidError: false,
+        password: "",
+        passwordRequiredError: false,
+      },
       signupUser: {
         name: "",
         nameRequiredError: false,
@@ -74,11 +82,13 @@ class Header extends Component {
     this.setState({ 
       isModalOpen: false,
       modalTabValue: 0,
-      loginEmail: "",
-      loginEmailRequiredError: false,
-      loginEmailInvalidError: false,
-      loginPassword: "",
-      loginPasswordRequiredError: false,
+      loginUser: {
+        email: "",
+        emailRequiredError: false,
+        emailInvalidError: false,
+        password: "",
+        passwordRequiredError: false,
+      },
       signupUser: {
         name: "",
         nameRequiredError: false,
@@ -99,12 +109,22 @@ class Header extends Component {
     this.setState({ isModalOpen: true });
   }
     
-  loginEmailInputHandler = (event) => {
-    this.setState({ loginEmail: event.target.value });
+  loginEmailInputHandler = ({ target: { value } }) => {
+    this.setState(oldState => ({
+      loginUser: {
+        ...oldState.loginUser,
+        email: value
+      }
+    }));
   }
   
-  loginPasswordInputHandler = (event) => {
-    this.setState({ loginPassword: event.target.value });
+  loginPasswordInputHandler = ({ target: { value } }) => {
+    this.setState(oldState => ({
+      loginUser: {
+        ...oldState.loginUser,
+        password: value
+      }
+    }));
   }
 
   signupNameInputHandler = ({ target: { value } }) => {
@@ -172,38 +192,30 @@ class Header extends Component {
     if (!(this.validateSignupForm())) return;
 
     const url = this.props.baseUrl + "/users";
-    const requestBody = JSON.stringify({user: this.state.signupUser});
 
-    fetch(url, { 
-      method: 'POST',
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-CSRF-TOKEN": document.querySelector('[name="csrf-token"]').content,
-      },
-      body: requestBody
+    API.postNewTask(url, { user: this.state.signupUser })
+    .then(response => {
+      alert("User successfully registered");
+      this.setState({
+        modalTabValue: 0,
+        signupUser: {
+          name: "",
+          nameRequiredError: false,
+          email: "",
+          emailRequiredError: false,
+          emailInvalidError: false,
+          password: "",
+          passwordRequiredError: false
+        }
+      })
     })
-    .then(async response => {
-      if (response.ok) {
-        alert("User successfully registered");
-        this.setState({
-          modalTabValue: 0,
-          signupUser: {
-            name: "",
-            nameRequiredError: false,
-            email: "",
-            emailRequiredError: false,
-            emailInvalidError: false,
-            password: "",
-            passwordRequiredError: false
-          }
+    .catch(error => {
+      if (error.json) {
+        error.json().then(json => {
+          alert(json.message);
         })
-      } else {
-        const responseBody = await response.json();
-        alert(responseBody.error_message);
       }
     })
-    .catch(err => console.log({err}));
   }
 
   validateLoginForm = () => {
@@ -211,21 +223,26 @@ class Header extends Component {
     let isEmailInvalid = false;
     let isPasswordMissing = false;
 
-    if (this.state.loginEmail === "") {
+    const { loginUser } = this.state;
+
+    if (loginUser.email === "") {
       isEmailMissing = true;
-    } else if (!(EMAIL_REGEX.test(this.state.loginEmail))) {
+    } else if (!(EMAIL_REGEX.test(loginUser.email))) {
       isEmailInvalid = true;
     }
 
-    if (this.state.loginPassword === "") {
+    if (loginUser.password === "") {
       isPasswordMissing = true;
     }
 
-    this.setState({
-      loginEmailRequiredError: isEmailMissing,
-      loginEmailInvalidError: isEmailInvalid,
-      loginPasswordRequiredError: isPasswordMissing
-    })
+    this.setState(oldState => ({
+      loginUser: {
+        ...oldState.loginUser,
+        emailRequiredError: isEmailMissing,
+        emailInvalidError: isEmailInvalid,
+        passwordRequiredError: isPasswordMissing
+      }
+    }))
 
     return (!isEmailMissing && !isEmailInvalid && !isPasswordMissing);
 }
@@ -233,37 +250,49 @@ class Header extends Component {
   loginSubmitClickHandler = () => {
     if (!(this.validateLoginForm())) return;
 
-    const url = this.props.baseUrl + "users";
-    const requestBody = JSON.stringify({ 
-      "email": this.state.loginEmail,
-      "password": this.state.loginPassword
-    });
+    const url = this.props.baseUrl + "/session";
 
-    fetch(url, { 
-      method: 'POST',
-      body: requestBody
+    API.postNewTask(url, { user: this.state.loginUser })
+    .then(response => {
+      const { name } = response.user;
+      window.location.reload();
     })
-    .then(async response => {
-      console.log({response});
-      if (response.ok) {
-        const responseBody = await response.json();
-        console.log({responseBody});
-      } else if (response.status === 400) {
-        const json = JSON.parse(response.body);
-        if (json.code === 'SGR-001') {
-          this.setState({
-            signupContactNumberRegisteredError: true
-          })
-        }
+    .catch(error => {
+      if (error.json) {
+        error.json().then(json => {
+          alert(json.message);
+        })
       }
     })
-    .catch(err => console.log({err}));
   }
 
   render() {
-    const { classes } = this.props;
+    const { classes, currentUser } = this.props;
+    let menuButton = null;
+    if (currentUser) {
+      menuButton = (
+        <Button 
+          classes={{root: classes.profileButton }}
+          size="large"
+          variant="text">
+          <AccountCircle className="profile-button-icon" htmlColor="#c2c2c2"/>
+          {currentUser.name}
+        </Button>
+      )
+    } else {
+      menuButton = (
+        <Button 
+          variant="contained"
+          color="default"
+          onClick={this.loginButtonClickHandler}>
+          <AccountCircle className="login-button-icon"/>
+          LOGIN
+        </Button>
+      )
+    }
     let modalContent = null;
     if (this.state.modalTabValue == 0) {
+      const { loginUser } = this.state;
       modalContent = 
         <Fragment>
           <br />
@@ -272,12 +301,12 @@ class Header extends Component {
             <Input
               className="input-fields"
               type="tel"
-              value={this.state.loginEmail}
+              value={loginUser.email}
               onChange={this.loginEmailInputHandler}/>
-            <FormHelperText className={this.state.loginEmailRequiredError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={loginUser.emailRequiredError ? "dispBlock" : "dispNone"}>
               <span className='red'>required</span>
             </FormHelperText>
-            <FormHelperText className={this.state.loginEmailInvalidError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={loginUser.emailInvalidError ? "dispBlock" : "dispNone"}>
               <span className='red'>Invalid Email</span>
             </FormHelperText>
           </FormControl>
@@ -287,9 +316,9 @@ class Header extends Component {
             <Input
               className="input-fields"
               type="password"
-              value={this.state.loginPassword}
+              value={loginUser.password}
               onChange={this.loginPasswordInputHandler} />
-            <FormHelperText className={this.state.loginPasswordRequiredError ? "dispBlock" : "dispNone"}>
+            <FormHelperText className={loginUser.passwordRequiredError ? "dispBlock" : "dispNone"}>
               <span className='red'>required</span>
             </FormHelperText>
           </FormControl>
@@ -374,13 +403,7 @@ class Header extends Component {
               placeholder="Search by poll question"
             />
           </div>
-          <Button 
-            variant="contained"
-            color="default"
-            onClick={this.loginButtonClickHandler}>
-            <AccountCircle className="login-button-icon"/>
-            LOGIN
-          </Button>
+          {menuButton}
         </header>
         <Modal
           ariaHideApp={false}

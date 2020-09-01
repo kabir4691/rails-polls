@@ -4,12 +4,16 @@ import Error404 from './error404/Error404'
 import Home from './home/Home'
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+  }
+
   render () {
     return (
       <Router>
         <Switch>
           <Route exact path="/">
-            <Home />
+            <Home currentUser={this.props.currentUser}/>
           </Route>
           <Route>
             <Error404 />

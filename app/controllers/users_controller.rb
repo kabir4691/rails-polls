@@ -7,7 +7,7 @@ class UsersController < ApplicationController
     if @user.save
       render status: :ok, json: { user: { name: @user.name } }
     else
-      render status: :forbidden, json: { error_message: @user.errors.full_messages.join("\n") }
+      render status: :forbidden, json: { message: @user.errors.full_messages.join("\n") }
     end
   end
 end
