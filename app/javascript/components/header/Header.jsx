@@ -193,7 +193,7 @@ class Header extends Component {
 
     const url = this.props.baseUrl + "/users";
 
-    API.postNewTask(url, { user: this.state.signupUser })
+    API.postNewTask(url, { user: this.state.signupUser }, 'POST')
     .then(response => {
       alert("User successfully registered");
       this.setState({
@@ -252,7 +252,7 @@ class Header extends Component {
 
     const url = this.props.baseUrl + "/session";
 
-    API.postNewTask(url, { user: this.state.loginUser })
+    API.postNewTask(url, { user: this.state.loginUser }, 'POST')
     .then(response => {
       const { name } = response.user;
       window.location.reload();

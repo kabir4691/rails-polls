@@ -5,10 +5,10 @@ const headers = {
 }
 
 export default {
-  postNewTask: (url, bodyObject) => {
+  postNewTask: (url, bodyObject, method) => {
     return fetch(url,
       {
-        method: 'POST',
+        method,
         headers,
         body: JSON.stringify(bodyObject)
       }
