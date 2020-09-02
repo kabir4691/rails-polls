@@ -11,4 +11,9 @@ class SessionsController < ApplicationController
       render status: :not_found, json: { message: 'Incorrect credentials, try again.' }
     end
   end
+
+  def destroy
+    reset_session
+    render status: :ok, json: { message: 'User logged out successfully' }
+  end
 end

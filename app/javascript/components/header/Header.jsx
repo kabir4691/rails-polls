@@ -10,6 +10,8 @@ import { Tab } from '@material-ui/core';
 import { FormControl } from '@material-ui/core';
 import { InputLabel } from '@material-ui/core';
 import { FormHelperText } from '@material-ui/core';
+import { Menu } from '@material-ui/core';
+import { MenuItem } from '@material-ui/core';
 import { PollSharp } from '@material-ui/icons'
 import { Search } from '@material-ui/icons'
 import { AccountCircle } from '@material-ui/icons'
@@ -75,6 +77,8 @@ class Header extends Component {
         password: "",
         passwordRequiredError: false
       },
+      isProfileMenuOpen: false,
+      profileMenuAnchorElement: null,
     }
   }
 
@@ -107,6 +111,29 @@ class Header extends Component {
 
   loginButtonClickHandler = () => {
     this.setState({ isModalOpen: true });
+  }
+
+  profileButtonClickHandler = (event) => {
+    this.setState({ 
+      profileMenuAnchorElement: event.currentTarget,
+      isProfileMenuOpen: true
+    });
+  };
+
+  closeProfileMenuHandler = () => {
+    this.setState({
+      profileMenuAnchorElement: null,
+      isProfileMenuOpen: false
+    })
+  }
+
+  logoutMenuItemHandler = () => {
+    const url = this.props.baseUrl + "/session";
+    API.postNewTask(url, null, 'DELETE')
+    .then(response => {
+      window.location.reload();
+    })
+    this.closeProfileMenuHandler();
   }
     
   loginEmailInputHandler = ({ target: { value } }) => {
@@ -274,7 +301,8 @@ class Header extends Component {
         <Button 
           classes={{root: classes.profileButton }}
           size="large"
-          variant="text">
+          variant="text"
+          onClick={this.profileButtonClickHandler}>
           <AccountCircle className="profile-button-icon" htmlColor="#c2c2c2"/>
           {currentUser.name}
         </Button>
@@ -404,6 +432,22 @@ class Header extends Component {
             />
           </div>
           {menuButton}
+          <Menu 
+            anchorEl={this.state.profileMenuAnchorElement}
+            getContentAnchorEl={null}
+            anchorOrigin={{ 
+              vertical: "bottom",
+              horizontal: "center"
+            }}
+            open={this.state.isProfileMenuOpen}
+            onClose={this.closeProfileMenuHandler}>
+            <MenuItem>
+              Create Poll
+            </MenuItem>
+            <MenuItem onClick={this.logoutMenuItemHandler}>
+              Logout
+            </MenuItem>
+          </Menu>
         </header>
         <Modal
           ariaHideApp={false}
